@@ -1,0 +1,6 @@
+spring:
+    application:
+        name: articlecheck
+
+server:
+    port: 8080
