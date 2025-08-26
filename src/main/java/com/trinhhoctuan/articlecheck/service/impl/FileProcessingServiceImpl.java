@@ -21,6 +21,12 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @Slf4j
 public class FileProcessingServiceImpl implements FileProcessingService {
+  /**
+   * Extract text content from the given file.
+   * 
+   * @param file The file to extract text from.
+   * @return The extracted text content.
+   */
   @Override
   public String extractTextFromFile(MultipartFile file) throws IOException {
     String fileName = file.getOriginalFilename();
@@ -49,6 +55,12 @@ public class FileProcessingServiceImpl implements FileProcessingService {
     }
   }
 
+  /**
+   * Check if the given file type is supported.
+   * 
+   * @param fileName The name of the file to check.
+   * @return true if the file type is supported, false otherwise.
+   */
   @Override
   public boolean isSupportedFileType(String fileName) {
     if (fileName == null)
@@ -61,6 +73,12 @@ public class FileProcessingServiceImpl implements FileProcessingService {
   }
 
   // ========================== Utils operations ========================
+  /**
+   * Get the file extension from the file name.
+   * 
+   * @param fileName The name of the file.
+   * @return The file extension, or an empty string if not found.
+   */
   private String getFileExtension(String fileName) {
     int lastDotIndex = fileName.lastIndexOf('.');
     if (lastDotIndex == -1)
@@ -68,10 +86,24 @@ public class FileProcessingServiceImpl implements FileProcessingService {
     return fileName.substring(lastDotIndex + 1);
   }
 
+  /**
+   * Extract text content from a TXT file.
+   * 
+   * @param inputStream The input stream of the TXT file.
+   * @return The extracted text content.
+   * @throws IOException If an I/O error occurs.
+   */
   private String extractTextFromTxt(InputStream inputStream) throws IOException {
     return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
   }
 
+  /**
+   * Extract text content from a DOC file.
+   * 
+   * @param inputStream The input stream of the DOC file.
+   * @return The extracted text content.
+   * @throws IOException If an I/O error occurs.
+   */
   private String extractTextFromPdf(InputStream inputStream) throws IOException {
     try (PDDocument document = Loader.loadPDF(inputStream.readAllBytes())) {
       PDFTextStripper pdfStripper = new PDFTextStripper();
@@ -79,6 +111,13 @@ public class FileProcessingServiceImpl implements FileProcessingService {
     }
   }
 
+  /**
+   * Extract text content from a PDF file.
+   * 
+   * @param inputStream The input stream of the PDF file.
+   * @return The extracted text content.
+   * @throws IOException If an I/O error occurs.
+   */
   private String extractTextFromDoc(InputStream inputStream) throws IOException {
     try (HWPFDocument document = new HWPFDocument(inputStream);
         WordExtractor extractor = new WordExtractor(document)) {
@@ -86,6 +125,13 @@ public class FileProcessingServiceImpl implements FileProcessingService {
     }
   }
 
+  /**
+   * Extract text content from a DOCX file.
+   * 
+   * @param inputStream The input stream of the DOCX file.
+   * @return The extracted text content.
+   * @throws IOException If an I/O error occurs.
+   */
   private String extractTextFromDocx(InputStream inputStream) throws IOException {
     try (XWPFDocument document = new XWPFDocument(inputStream);
         XWPFWordExtractor extractor = new XWPFWordExtractor(document)) {
