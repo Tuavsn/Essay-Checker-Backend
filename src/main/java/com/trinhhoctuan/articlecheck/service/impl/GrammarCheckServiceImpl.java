@@ -25,6 +25,13 @@ public class GrammarCheckServiceImpl implements GrammarCheckService {
   private final GrammarCheckRepository grammarCheckRepository;
   private final JLanguageTool languageTool;
 
+  /**
+   * Check the grammar of the given text.
+   * 
+   * @param essay The essay entity.
+   * @param text  The text to check.
+   * @return A list of grammar check results.
+   */
   @Override
   public List<GrammarCheckDto> checkGrammar(Essay essay, String text) {
     try {
@@ -46,6 +53,12 @@ public class GrammarCheckServiceImpl implements GrammarCheckService {
     }
   }
 
+  /**
+   * Get all grammar checks for a specific essay.
+   * 
+   * @param essayId The ID of the essay.
+   * @return A list of grammar check results.
+   */
   @Override
   public List<GrammarCheckDto> getGrammarChecks(Long essayId) {
     return grammarCheckRepository.findByEssayId(essayId)
@@ -54,6 +67,9 @@ public class GrammarCheckServiceImpl implements GrammarCheckService {
         .collect(Collectors.toList());
   }
 
+  /**
+   * Mark a specific grammar check as fixed.
+   */
   @Override
   public void markAsFixed(Long grammarCheckId) {
     GrammarCheck grammarCheck = grammarCheckRepository.findById(grammarCheckId)
@@ -63,6 +79,13 @@ public class GrammarCheckServiceImpl implements GrammarCheckService {
 
   }
 
+  /**
+   * Convert a RuleMatch to a GrammarCheck entity.
+   * 
+   * @param match
+   * @param essay
+   * @return
+   */
   private GrammarCheck convertToGrammarCheck(RuleMatch match, Essay essay) {
     return GrammarCheck.builder()
         .essay(essay)
@@ -78,6 +101,12 @@ public class GrammarCheckServiceImpl implements GrammarCheckService {
         .build();
   }
 
+  /**
+   * Map a category name to an error severity level.
+   * 
+   * @param categoryName
+   * @return
+   */
   private ErrorSeverity mapSeverity(String categoryName) {
     if (categoryName.contains("Grammar") || categoryName.contains("Punctuation")) {
       return ErrorSeverity.HIGH;
@@ -88,6 +117,12 @@ public class GrammarCheckServiceImpl implements GrammarCheckService {
     }
   }
 
+  /**
+   * Convert a GrammarCheck entity to a DTO.
+   * 
+   * @param grammarCheck
+   * @return
+   */
   private GrammarCheckDto convertToDto(GrammarCheck grammarCheck) {
     return GrammarCheckDto.builder()
         .id(grammarCheck.getId())
