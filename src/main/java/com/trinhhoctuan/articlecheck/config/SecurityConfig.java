@@ -18,14 +18,21 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.web.SecurityFilterChain;
 
+import com.trinhhoctuan.articlecheck.service.CustomOAuth2UserService;
+
+import lombok.AllArgsConstructor;
+
 @Configuration
 @EnableWebSecurity
+@AllArgsConstructor
 public class SecurityConfig {
   @Value("${spring.security.oauth2.client.registration.google.client-id}")
   private String clientId;
 
   @Value("${spring.security.oauth2.client.registration.google.client-secret}")
   private String clientSecret;
+
+  private final CustomOAuth2UserService customOAuth2UserService;
 
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -41,7 +48,7 @@ public class SecurityConfig {
             .defaultSuccessUrl("/api/auth/success", true)
             .failureUrl("/login?error=true")
             .userInfoEndpoint(userInfo -> userInfo
-                .userService(customOAuth2UserService())))
+                .userService(customOAuth2UserService)))
         .oauth2ResourceServer(oauth2 -> oauth2
             .jwt(jwt -> jwt.decoder(jwtDecoder())))
         .logout(logout -> logout
@@ -75,11 +82,6 @@ public class SecurityConfig {
   @Bean
   public JwtDecoder jwtDecoder() {
     return NimbusJwtDecoder.withJwkSetUri("https://www.googleapis.com/oauth2/v3/certs").build();
-  }
-
-  @Bean
-  public CustomOAuth2UserService customOAuth2UserService() {
-    return new CustomOAuth2UserService();
   }
 
   @Bean
