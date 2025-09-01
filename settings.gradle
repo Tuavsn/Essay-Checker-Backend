@@ -1,0 +1,16 @@
+// Plugin management must be first
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        mavenCentral()
+    }
+}
+
+rootProject.name = 'articlecheck'
+
+// Enable Gradle build cache
+buildCache {
+    local {
+        enabled = true
+    }
+}

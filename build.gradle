@@ -1,0 +1,138 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.5.3'
+    id 'io.spring.dependency-management' version '1.1.6'
+}
+
+group = 'com.trinhhoctuan'
+version = '0.0.1-SNAPSHOT'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // Spring Boot Starters
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.springframework.boot:spring-boot-starter-aop'
+    
+    // Database
+    runtimeOnly 'com.mysql:mysql-connector-j'
+    
+    // File Processing
+    implementation 'org.apache.poi:poi:5.2.4'
+    implementation 'org.apache.poi:poi-ooxml:5.2.4'
+    implementation 'org.apache.poi:poi-scratchpad:5.2.4'
+    implementation 'org.apache.pdfbox:pdfbox:3.0.1'
+    
+    // Language Processing
+    implementation 'org.languagetool:language-all:6.3'
+    implementation 'info.debatty:java-string-similarity:2.0.0'
+    
+    // Rate Limiting
+    implementation 'com.github.vladimir-bukhtoyarov:bucket4j-core:7.6.0'
+    
+    // Logging
+    implementation 'net.logstash.logback:logstash-logback-encoder:7.4'
+    
+    // MapStruct
+    implementation 'org.mapstruct:mapstruct:1.5.5.Final'
+    annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
+    
+    // Lombok
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    
+    // Development Tools
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+    
+    // Testing
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'io.projectreactor:reactor-test'
+    testImplementation 'org.springframework.security:spring-security-test'
+    testImplementation 'org.testcontainers:junit-jupiter'
+    testImplementation 'org.testcontainers:mysql'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+// Configure annotation processors
+compileJava {
+    options.annotationProcessorPath = configurations.annotationProcessor
+}
+
+// Test configuration
+tasks.named('test') {
+    useJUnitPlatform()
+    testLogging {
+        events "passed", "skipped", "failed"
+        exceptionFormat "full"
+    }
+}
+
+// Bootjar configuration
+jar {
+    enabled = false
+    archiveClassifier = ''
+}
+
+bootJar {
+    enabled = true
+    archiveClassifier = ''
+    mainClass = 'com.trinhhoctuan.articlecheck.ArticlecheckApplication'
+}
+
+// Build info
+springBoot {
+    buildInfo()
+}
+
+// JVM arguments for development
+tasks.named('bootRun') {
+    jvmArgs = [
+        '-Dspring.profiles.active=dev',
+        '-Dspring.devtools.restart.enabled=true',
+        '-Dspring.devtools.livereload.enabled=true'
+    ]
+}
+
+// Production build optimization
+tasks.register('buildProduction') {
+    dependsOn 'clean', 'test', 'bootJar'
+    description = 'Build production-ready JAR'
+    group = 'build'
+    
+    doLast {
+        println "Production build completed: ${bootJar.archiveFile.get()}"
+    }
+}
+
+// Docker build task
+tasks.register('buildDocker') {
+    dependsOn 'buildProduction'
+    description = 'Build Docker image'
+    group = 'docker'
+    
+    doLast {
+        exec {
+            commandLine 'docker', 'build', '-t', "${project.name}:${project.version}", '.'
+        }
+    }
+}
