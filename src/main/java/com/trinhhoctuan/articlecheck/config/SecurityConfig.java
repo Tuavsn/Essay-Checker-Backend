@@ -70,6 +70,12 @@ public class SecurityConfig {
   @Value("${app.cors.max-age}")
   private long maxAge;
 
+  /**
+   * Security Configuration
+   * @param http
+   * @return
+   * @throws Exception
+   */
   @Bean
   public SecurityFilterChain productionSecurityFilterChain(HttpSecurity http) throws Exception {
     return http
@@ -102,6 +108,9 @@ public class SecurityConfig {
         .build();
   }
 
+  /**
+   * Cors Configuration
+   */
   @Bean
   public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration configuration = new CorsConfiguration();
