@@ -3,93 +3,141 @@ package com.trinhhoctuan.articlecheck.config;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager;
-import org.springframework.security.oauth2.client.registration.ClientRegistration;
-import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
-import org.springframework.security.oauth2.client.registration.InMemoryClientRegistrationRepository;
-import org.springframework.security.oauth2.client.web.DefaultOAuth2AuthorizedClientManager;
-import org.springframework.security.oauth2.client.web.OAuth2AuthorizedClientRepository;
-import org.springframework.security.oauth2.core.AuthorizationGrantType;
-import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
-import org.springframework.security.oauth2.core.oidc.IdTokenClaimNames;
-import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.config.Customizer;
+
+// OAuth2 imports removed - using Spring Boot auto-configuration
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import com.trinhhoctuan.articlecheck.service.CustomOAuth2UserService;
 
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
+
+import java.util.Arrays;
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
-@AllArgsConstructor
+@EnableMethodSecurity(prePostEnabled = true)
+@RequiredArgsConstructor
 public class SecurityConfig {
-  @Value("${spring.security.oauth2.client.registration.google.client-id}")
-  private String clientId;
-
-  @Value("${spring.security.oauth2.client.registration.google.client-secret}")
-  private String clientSecret;
 
   private final CustomOAuth2UserService customOAuth2UserService;
 
+  private static final String[] PUBLIC_ENDPOINTS = new String[] {
+      "/",
+      "/api/public/**",
+      "/actuator/health",
+      "/actuator/info",
+      "/actuator/prometheus"
+  };
+
+  private static final String[] ADMIN_ENDPOINTS = new String[] {
+      "/actuator/**",
+      "/api/admin/**"
+  };
+
+  private static final String[] USER_ENDPOINTS = new String[] {
+      "/api/user/**"
+  };
+
+  private static final List<String> EXPOSE_HEADERS = List.of(
+      "Authorization",
+      "Content-Type",
+      "X-Total-Count",
+      "X-Page-Number",
+      "X-Page-Size");
+
+  @Value("${app.cors.allowed-origins}")
+  private String allowedOrigins;
+
+  @Value("${app.cors.allowed-methods}")
+  private String allowedMethods;
+
+  @Value("${app.cors.allowed-headers}")
+  private String allowedHeaders;
+
+  @Value("${app.cors.allow-credentials}")
+  private boolean allowCredentials;
+
+  @Value("${app.cors.max-age}")
+  private long maxAge;
+
   @Bean
-  public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-    http
-        .authorizeHttpRequests(authz -> authz
-            .requestMatchers("/", "/login", "/oauth2/**", "/api/public/**").permitAll()
-            .requestMatchers("/api/admin/**").hasRole("ADMIN")
-            .requestMatchers("/api/user/**").hasRole("USER")
-            .requestMatchers("/api/**").authenticated()
+  public SecurityFilterChain productionSecurityFilterChain(HttpSecurity http) throws Exception {
+    return http
+        .csrf(AbstractHttpConfigurer::disable)
+        .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+        .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+        .authorizeHttpRequests(auth -> auth
+            // Public endpoints
+            .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
+            // Admin endpoints
+            .requestMatchers(ADMIN_ENDPOINTS).hasRole("ADMIN")
+            // User endpoints
+            .requestMatchers(USER_ENDPOINTS).hasRole("USER")
+            // All other endpoints require authentication
             .anyRequest().authenticated())
         .oauth2Login(oauth2 -> oauth2
-            .loginPage("/login")
-            .defaultSuccessUrl("/api/auth/success", true)
-            .failureUrl("/login?error=true")
+            .defaultSuccessUrl("http://localhost:3000/dashboard", true)
             .userInfoEndpoint(userInfo -> userInfo
                 .userService(customOAuth2UserService)))
-        .oauth2ResourceServer(oauth2 -> oauth2
-            .jwt(jwt -> jwt.decoder(jwtDecoder())))
+        .headers(headers -> headers
+            .frameOptions(frameOptions -> frameOptions.sameOrigin())
+            .httpStrictTransportSecurity(hstsConfig -> hstsConfig
+                .maxAgeInSeconds(31536000)
+                .includeSubDomains(true))
+            .contentTypeOptions(Customizer.withDefaults())
+            .referrerPolicy(Customizer.withDefaults()))
         .logout(logout -> logout
             .logoutSuccessUrl("/")
-            .deleteCookies("JSESSIONID"));
-    return http.build();
-  }
-
-  @Bean
-  public ClientRegistrationRepository clientRegistrationRepository() {
-    return new InMemoryClientRegistrationRepository(googleClientRegistration());
-  }
-
-  private ClientRegistration googleClientRegistration() {
-    return ClientRegistration.withRegistrationId("google")
-        .clientId(clientId)
-        .clientSecret(clientSecret)
-        .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
-        .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
-        .redirectUri("{baseUrl}/login/oauth2/code/{registrationId}")
-        .scope("openid", "profile", "email")
-        .authorizationUri("https://accounts.google.com/o/oauth2/v2/auth")
-        .tokenUri("https://www.googleapis.com/oauth2/v4/token")
-        .userInfoUri("https://www.googleapis.com/oauth2/v3/userinfo")
-        .userNameAttributeName(IdTokenClaimNames.SUB)
-        .jwkSetUri("https://www.googleapis.com/oauth2/v3/certs")
-        .clientName("Google")
+            .deleteCookies("JSESSIONID"))
         .build();
   }
 
   @Bean
-  public JwtDecoder jwtDecoder() {
-    return NimbusJwtDecoder.withJwkSetUri("https://www.googleapis.com/oauth2/v3/certs").build();
-  }
+  public CorsConfigurationSource corsConfigurationSource() {
+    CorsConfiguration configuration = new CorsConfiguration();
 
-  @Bean
-  public OAuth2AuthorizedClientManager authorizedClientManager(
-      ClientRegistrationRepository clientRegistrationRepository,
-      OAuth2AuthorizedClientRepository authorizedClientRepository) {
+    // Parse allowed origins
+    if ("*".equals(allowedOrigins)) {
+      configuration.setAllowedOrigins(List.of("*"));
+    } else {
+      List<String> origins = Arrays.asList(allowedOrigins.split(","));
+      configuration.setAllowedOrigins(origins);
+    }
 
-    return new DefaultOAuth2AuthorizedClientManager(
-        clientRegistrationRepository, authorizedClientRepository);
+    // Parse allowed methods
+    if ("*".equals(allowedMethods)) {
+      configuration.setAllowedMethods(List.of("*"));
+    } else {
+      List<String> methods = Arrays.asList(allowedMethods.split(","));
+      configuration.setAllowedMethods(methods);
+    }
+
+    // Parse allowed headers
+    if ("*".equals(allowedHeaders)) {
+      configuration.setAllowedHeaders(List.of("*"));
+    } else {
+      List<String> headers = Arrays.asList(allowedHeaders.split(","));
+      configuration.setAllowedHeaders(headers);
+    }
+
+    configuration.setAllowCredentials(allowCredentials);
+    configuration.setMaxAge(maxAge);
+
+    // Expose common headers
+    configuration.setExposedHeaders(EXPOSE_HEADERS);
+
+    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    source.registerCorsConfiguration("/**", configuration);
+    return source;
   }
 }
