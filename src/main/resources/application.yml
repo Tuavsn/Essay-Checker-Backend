@@ -1,5 +1,10 @@
-# Spring configurations
 spring:
+  application:
+    name: articlecheck
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+
+  # Security Configuration
   security:
     oauth2:
       client:
@@ -17,21 +22,26 @@ spring:
             token-uri: https://www.googleapis.com/oauth2/v4/token
             user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
             user-name-attribute: sub
-  application:
-    name: articlecheck
+
+  # Database Configuration
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/articlecheck_dev?createDatabaseIfNotExist=true}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:root}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  # JPA Configuration
   jpa:
     hibernate:
-      ddl-auto: create-drop
-    show-sql: true
+      ddl-auto: ${JPA_DDL_AUTO:update}
+    show-sql: ${JPA_SHOW_SQL:true}
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.H2Dialect
-        format_sql: true
-  datasource:
-    url: jdbc:mysql://localhost:3306/${DB_NAME}?createDatabaseIfNotExist=true
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
-    driverClassName: com.mysql.cj.jdbc.Driver
+        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: ${JPA_FORMAT_SQL:true}
+        use_sql_comments: ${JPA_SQL_COMMENTS:true}
+
+  # Mail Configuration
   mail:
     host: smtp.gmail.com
     port: 587
@@ -44,10 +54,42 @@ spring:
           starttls:
             enable: true
 
-# JWT Configuration
-jwt:
-  secret: ${JWT_SECRET}
-  expiration: 86400000 # 1 day in milliseconds
+  # Web Configuration
+  servlet:
+    multipart:
+      max-file-size: ${MULTIPART_MAX_FILE_SIZE:50MB}
+      max-request-size: ${MULTIPART_MAX_REQUEST_SIZE:50MB}
+
+server:
+  port: ${SERVER_PORT:8080}
+  servlet:
+    context-path: /api
+  compression:
+    enabled: ${SERVER_COMPRESSION:false}
+    mime-types: text/html,text/xml,text/plain,text/css,text/javascript,application/javascript,application/json
+    min-response-size: 1024
+  http2:
+    enabled: ${SERVER_HTTP2:false}
+  error:
+    include-stacktrace: ${ERROR_STACKTRACE:always}
+    include-message: ${ERROR_MESSAGE:always}
+
+# Logging Configuration
+logging:
+  level:
+    com.trinhhoctuan.articlecheck: ${LOG_LEVEL_APP:INFO}
+    org.springframework.security: ${LOG_LEVEL_SECURITY:WARN}
+    org.hibernate.SQL: ${LOG_LEVEL_SQL:WARN}
+    org.hibernate.type.descriptor.sql.BasicBinder: ${LOG_LEVEL_SQL_PARAMS:WARN}
+    org.springframework.web: ${LOG_LEVEL_WEB:WARN}
+    org.springframework.transaction: ${LOG_LEVEL_TRANSACTION:WARN}
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: ${LOG_FILE:logs/articlecheck.log}
+    max-size: ${LOG_MAX_SIZE:100MB}
+    max-history: ${LOG_MAX_HISTORY:30}
 
 # OpenAI API configurations
 openai:
@@ -55,22 +97,17 @@ openai:
     key: ${OPENAI_API_KEY}
     url: https://api.openai.com/v1/chat/completions
 
-# File upload configurations
-file:
-  upload:
-    dir: ${java.io.tmpdir}/essay-uploads
-
-# Server configurations
-server:
-  port: 8080
-  servlet:
-    multipart:
-      max-file-size: 10MB
-      max-request-size: 10MB
-
-# Logging
-logging:
-  level:
-    org.springframework.security: DEBUG
-    org.springframework.security.oauth2: DEBUG
-    com.trinhhoctuan.articlecheck: DEBUG
+# Application Specific Configuration
+app:
+  file:
+    upload-dir: ${FILE_UPLOAD_DIR:./uploads}
+  
+  grammar:
+    language: ${GRAMMAR_LANGUAGE:en-US}
+  
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:3001}
+    allowed-methods: ${CORS_ALLOWED_METHODS:GET,POST,PUT,DELETE,OPTIONS}
+    allowed-headers: ${CORS_ALLOWED_HEADERS:*}
+    allow-credentials: ${CORS_ALLOW_CREDENTIALS:true}
+    max-age: ${CORS_MAX_AGE:3600}
