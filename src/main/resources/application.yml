@@ -1,9 +1,21 @@
 spring:
+  # Application Configuration
   application:
     name: articlecheck
+    version: 1.0.0
+  # Active Profile Configuration
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:dev}
-
+  # Web Configuration
+  web:
+    # CORS Configuration
+    cors:
+      allowed-origins: ${CORS_ALLOWED_ORIGINS:*}
+      allowed-methods: ${CORS_ALLOWED_METHODS:GET,POST,PUT,DELETE,OPTIONS}
+      allowed-headers: ${CORS_ALLOWED_HEADERS:*}
+      allow-credentials: ${CORS_ALLOW_CREDENTIALS:true}
+      max-age: ${CORS_MAX_AGE:3600}
+      exposed-headers: Authorization,Content-Type,X-Total-Count,X-Page-Number,X-Page-Size
   # Security Configuration
   security:
     oauth2:
@@ -13,23 +25,15 @@ spring:
             client-id: ${GOOGLE_CLIENT_ID}
             client-secret: ${GOOGLE_CLIENT_SECRET}
             scope:
-              - openid
               - profile
               - email
-        provider:
-          google:
-            authorization-uri: https://accounts.google.com/o/oauth2/v2/auth
-            token-uri: https://www.googleapis.com/oauth2/v4/token
-            user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
-            user-name-attribute: sub
-
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
   # Database Configuration
   datasource:
     url: ${DB_URL:jdbc:mysql://localhost:3306/articlecheck_dev?createDatabaseIfNotExist=true}
     username: ${DB_USERNAME:root}
     password: ${DB_PASSWORD:root}
     driver-class-name: com.mysql.cj.jdbc.Driver
-
   # JPA Configuration
   jpa:
     hibernate:
@@ -40,7 +44,6 @@ spring:
         dialect: org.hibernate.dialect.MySQLDialect
         format_sql: ${JPA_FORMAT_SQL:true}
         use_sql_comments: ${JPA_SQL_COMMENTS:true}
-
   # Mail Configuration
   mail:
     host: smtp.gmail.com
@@ -53,17 +56,14 @@ spring:
           auth: true
           starttls:
             enable: true
-
   # Web Configuration
   servlet:
     multipart:
       max-file-size: ${MULTIPART_MAX_FILE_SIZE:50MB}
       max-request-size: ${MULTIPART_MAX_REQUEST_SIZE:50MB}
-
+# Server Configuration
 server:
   port: ${SERVER_PORT:8080}
-  servlet:
-    context-path: /api
   compression:
     enabled: ${SERVER_COMPRESSION:false}
     mime-types: text/html,text/xml,text/plain,text/css,text/javascript,application/javascript,application/json
@@ -73,7 +73,6 @@ server:
   error:
     include-stacktrace: ${ERROR_STACKTRACE:always}
     include-message: ${ERROR_MESSAGE:always}
-
 # Logging Configuration
 logging:
   level:
@@ -90,24 +89,25 @@ logging:
     name: ${LOG_FILE:logs/articlecheck.log}
     max-size: ${LOG_MAX_SIZE:100MB}
     max-history: ${LOG_MAX_HISTORY:30}
-
-# OpenAI API configurations
-openai:
-  api:
-    key: ${OPENAI_API_KEY}
-    url: https://api.openai.com/v1/chat/completions
-
 # Application Specific Configuration
 app:
+  # File upload configurations
   file:
     upload-dir: ${FILE_UPLOAD_DIR:./uploads}
-  
+  # Grammar configurations
   grammar:
     language: ${GRAMMAR_LANGUAGE:en-US}
-  
-  cors:
-    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:3001}
-    allowed-methods: ${CORS_ALLOWED_METHODS:GET,POST,PUT,DELETE,OPTIONS}
-    allowed-headers: ${CORS_ALLOWED_HEADERS:*}
-    allow-credentials: ${CORS_ALLOW_CREDENTIALS:true}
-    max-age: ${CORS_MAX_AGE:3600}
+  # OpenAI API configurations
+  openai:
+    api:
+      model: ${OPENAI_MODEL}
+      key: ${OPENAI_API_KEY}
+      url: https://api.openai.com/v1/chat/completions
+  # Oauth configurations
+  oauth:
+    authorizedRedirectUri: ${AUTHORIZED_REDIRECT_URI:http://localhost:3000}
+  # JWT configurations
+  jwt:
+    secret: ${JWT_SECRET}
+    expiration: ${JWT_EXPIRATION} # 1 day in milliseconds
+    refresh-expiration: ${JWT_REFRESH_EXPIRATION} # 7 days in milliseconds
