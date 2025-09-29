@@ -6,24 +6,38 @@ import java.util.stream.Collectors;
 
 import org.languagetool.JLanguageTool;
 import org.languagetool.rules.RuleMatch;
+import org.languagetool.rules.spelling.hunspell.HunspellRule;
 import org.springframework.stereotype.Service;
 
 import com.trinhhoctuan.articlecheck.dtos.GrammarCheckDto;
+import com.trinhhoctuan.articlecheck.mappers.GrammarCheckMapper;
 import com.trinhhoctuan.articlecheck.models.Essay;
 import com.trinhhoctuan.articlecheck.models.GrammarCheck;
 import com.trinhhoctuan.articlecheck.models.GrammarCheck.ErrorSeverity;
 import com.trinhhoctuan.articlecheck.repositories.GrammarCheckRepository;
 import com.trinhhoctuan.articlecheck.services.GrammarCheckService;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Implementation of the GrammarCheckService interface.
+ * This class provides methods to check and manage grammar checks for essays.
+ */
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class GrammarCheckServiceImpl implements GrammarCheckService {
   private final GrammarCheckRepository grammarCheckRepository;
+  private final GrammarCheckMapper grammarCheckMapper;
   private final JLanguageTool languageTool;
+
+  public GrammarCheckServiceImpl(
+      GrammarCheckRepository grammarCheckRepository,
+      GrammarCheckMapper grammarCheckMapper,
+      JLanguageTool languageTool) {
+    this.grammarCheckRepository = grammarCheckRepository;
+    this.grammarCheckMapper = grammarCheckMapper;
+    this.languageTool = languageTool;
+  }
 
   /**
    * Check the grammar of the given text.
@@ -33,18 +47,24 @@ public class GrammarCheckServiceImpl implements GrammarCheckService {
    * @return A list of grammar check results.
    */
   @Override
-  public List<GrammarCheckDto> checkGrammar(Essay essay, String text) {
+  public List<GrammarCheckDto> checkGrammar(Essay essay, List<String> customWords) {
     try {
-      List<RuleMatch> matches = languageTool.check(text);
+      // Add custom words to the Hunspell dictionary
+      addCustomWordsToDictionary(customWords);
 
+      // Check the text for grammar issues
+      List<RuleMatch> matches = languageTool.check(essay.getOriginalContent());
+
+      // Convert RuleMatches to GrammarCheck entities
       List<GrammarCheck> grammarChecks = matches.stream()
           .map(match -> convertToGrammarCheck(match, essay))
           .collect(Collectors.toList());
 
+      // Save grammar checks to the database
       grammarCheckRepository.saveAll(grammarChecks);
 
       return grammarChecks.stream()
-          .map(this::convertToDto)
+          .map(grammarCheckMapper::convertToDto)
           .collect(Collectors.toList());
     } catch (IOException e) {
       log.error("Error checking grammar for essay {}", essay.getId(), e);
@@ -63,7 +83,7 @@ public class GrammarCheckServiceImpl implements GrammarCheckService {
   public List<GrammarCheckDto> getGrammarChecks(Long essayId) {
     return grammarCheckRepository.findByEssayId(essayId)
         .stream()
-        .map(this::convertToDto)
+        .map(grammarCheckMapper::convertToDto)
         .collect(Collectors.toList());
   }
 
@@ -117,23 +137,13 @@ public class GrammarCheckServiceImpl implements GrammarCheckService {
     }
   }
 
-  /**
-   * Convert a GrammarCheck entity to a DTO.
-   * 
-   * @param grammarCheck
-   * @return
-   */
-  private GrammarCheckDto convertToDto(GrammarCheck grammarCheck) {
-    return GrammarCheckDto.builder()
-        .id(grammarCheck.getId())
-        .startPosition(grammarCheck.getStartPosition())
-        .endPosition(grammarCheck.getEndPosition())
-        .errorText(grammarCheck.getErrorText())
-        .ruleId(grammarCheck.getRuleId())
-        .message(grammarCheck.getMessage())
-        .suggestedReplacement(grammarCheck.getSuggestedReplacement())
-        .severity(grammarCheck.getSeverity())
-        .isFixed(grammarCheck.getIsFixed())
-        .build();
+  private void addCustomWordsToDictionary(List<String> customWords) {
+    // Add custom words to the Hunspell dictionary
+    languageTool.getAllActiveRules().stream()
+        .filter(rule -> rule instanceof HunspellRule)
+        .map(rule -> (HunspellRule) rule)
+        .forEach(hunspellRule -> {
+          hunspellRule.addIgnoreTokens(customWords);
+        });
   }
 }
