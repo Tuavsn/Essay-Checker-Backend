@@ -9,7 +9,7 @@ version = '0.0.1-SNAPSHOT'
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(24)
+        languageVersion = JavaLanguageVersion.of(21)
     }
 }
 
@@ -24,7 +24,7 @@ repositories {
 }
 
 dependencies {
-    // Spring Boot Starters
+    //================== Spring dependencies ==================
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
@@ -34,23 +34,13 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'org.springframework.boot:spring-boot-starter-aop'
 
-    // JWT
+    // JWT 
     implementation 'io.jsonwebtoken:jjwt-api:0.12.3'
     implementation 'io.jsonwebtoken:jjwt-impl:0.12.3'
     implementation 'io.jsonwebtoken:jjwt-jackson:0.12.3'
     
     // Database
     runtimeOnly 'com.mysql:mysql-connector-j'
-    
-    // File Processing
-    implementation 'org.apache.poi:poi:5.2.4'
-    implementation 'org.apache.poi:poi-ooxml:5.2.4'
-    implementation 'org.apache.poi:poi-scratchpad:5.2.4'
-    implementation 'org.apache.pdfbox:pdfbox:3.0.1'
-    
-    // Language Processing
-    implementation 'org.languagetool:language-all:6.3'
-    implementation 'info.debatty:java-string-similarity:2.0.0'
     
     // Rate Limiting
     implementation 'com.github.vladimir-bukhtoyarov:bucket4j-core:7.6.0'
@@ -76,6 +66,25 @@ dependencies {
     testImplementation 'org.testcontainers:junit-jupiter'
     testImplementation 'org.testcontainers:mysql'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    //================== File Processing ==================
+    implementation 'org.apache.poi:poi:5.2.4'
+    implementation 'org.apache.poi:poi-ooxml:5.2.4'
+    implementation 'org.apache.poi:poi-scratchpad:5.2.4'
+    implementation 'org.apache.pdfbox:pdfbox:3.0.1'
+    
+    // ================= Language Processing ==================
+
+    // Spelling and Grammar Checking
+    implementation 'org.languagetool:language-all:6.3'
+    implementation 'org.languagetool:hunspell-native-libs:2.9'
+
+    // String Similarity and Language Detection
+    implementation 'info.debatty:java-string-similarity:2.0.0'
+
+    // Language Detection
+    implementation 'org.apache.tika:tika-core:2.9.1'
+    implementation 'org.apache.tika:tika-langdetect-optimaize:2.9.1'
 }
 
 // Configure annotation processors
