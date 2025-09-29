@@ -2,6 +2,8 @@ package com.trinhhoctuan.articlecheck.models;
 
 import java.util.List;
 
+import com.trinhhoctuan.articlecheck.enums.FileType;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -29,17 +31,18 @@ public class Essay extends BaseModel {
     @Column(nullable = false)
     private String title;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "MEDIUMTEXT")
     private String originalContent;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "MEDIUMTEXT")
     private String processedContent;
 
     @Column
     private String fileName;
 
     @Column
-    private String fileType;
+    @Enumerated(EnumType.STRING)
+    private FileType fileType;
 
     @Enumerated(EnumType.STRING)
     private EssayStatus status;

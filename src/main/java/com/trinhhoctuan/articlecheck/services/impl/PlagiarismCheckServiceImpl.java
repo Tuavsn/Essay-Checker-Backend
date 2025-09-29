@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
 import com.trinhhoctuan.articlecheck.dtos.PlagiarismCheckDto;
+import com.trinhhoctuan.articlecheck.mappers.PlagiarismCheckMapper;
 import com.trinhhoctuan.articlecheck.models.Essay;
 import com.trinhhoctuan.articlecheck.models.PlagiarismCheck;
 import com.trinhhoctuan.articlecheck.repositories.PlagiarismCheckRepository;
@@ -14,18 +15,30 @@ import com.trinhhoctuan.articlecheck.services.PlagiarismCheckService;
 
 import info.debatty.java.stringsimilarity.Cosine;
 import info.debatty.java.stringsimilarity.Jaccard;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Implementation of the PlagiarismCheckService interface.
+ * This class provides methods to check for plagiarism in essays.
+ */
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class PlagiarismCheckServiceImpl implements PlagiarismCheckService {
   private final PlagiarismCheckRepository plagiarismCheckRepository;
-  private final Cosine cosine = new Cosine();
-  private final Jaccard jaccard = new Jaccard();
+  private final PlagiarismCheckMapper plagiarismCheckMapper;
+  private final Cosine cosine;
+  private final Jaccard jaccard;
+  List<String> referenceTexts;
 
-  List<String> referenceTexts = new ArrayList<>();
+  public PlagiarismCheckServiceImpl(
+      PlagiarismCheckRepository plagiarismCheckRepository,
+      PlagiarismCheckMapper plagiarismCheckMapper) {
+    this.plagiarismCheckRepository = plagiarismCheckRepository;
+    this.plagiarismCheckMapper = plagiarismCheckMapper;
+    this.cosine = new Cosine();
+    this.jaccard = new Jaccard();
+    this.referenceTexts = new ArrayList<>();
+  }
 
   /**
    * Check for plagiarism in the given essay text.
@@ -81,7 +94,7 @@ public class PlagiarismCheckServiceImpl implements PlagiarismCheckService {
     plagiarismCheckRepository.saveAll(plagiarismChecks);
 
     return plagiarismChecks.stream()
-        .map(this::convertToDto)
+        .map(plagiarismCheckMapper::convertToDto)
         .collect(Collectors.toList());
   }
 
@@ -95,9 +108,8 @@ public class PlagiarismCheckServiceImpl implements PlagiarismCheckService {
   public List<PlagiarismCheckDto> getPlagiarismChecks(Long essayId) {
     return plagiarismCheckRepository.findByEssayId(essayId)
         .stream()
-        .map(this::convertToDto)
+        .map(plagiarismCheckMapper::convertToDto)
         .collect(Collectors.toList());
-
   }
 
   /**
@@ -111,26 +123,7 @@ public class PlagiarismCheckServiceImpl implements PlagiarismCheckService {
   public List<PlagiarismCheckDto> getHighSimilarityChecks(Long essayId, Double threshold) {
     return plagiarismCheckRepository.findByEssayIdAndSimilarityScoreGreaterThan(essayId, threshold)
         .stream()
-        .map(this::convertToDto)
+        .map(plagiarismCheckMapper::convertToDto)
         .collect(Collectors.toList());
-
-  }
-
-  /**
-   * Convert a PlagiarismCheck entity to a DTO.
-   * 
-   * @param plagiarismCheck
-   * @return
-   */
-  private PlagiarismCheckDto convertToDto(PlagiarismCheck plagiarismCheck) {
-    return PlagiarismCheckDto.builder()
-        .id(plagiarismCheck.getId())
-        .matchedText(plagiarismCheck.getMatchedText())
-        .sourceUrl(plagiarismCheck.getSourceUrl())
-        .sourceName(plagiarismCheck.getSourceName())
-        .similarityScore(plagiarismCheck.getSimilarityScore())
-        .startPosition(plagiarismCheck.getStartPosition())
-        .endPosition(plagiarismCheck.getEndPosition())
-        .build();
   }
 }

@@ -17,26 +17,27 @@ import com.trinhhoctuan.articlecheck.dtos.EssayDto;
 import com.trinhhoctuan.articlecheck.dtos.FileUploadResponse;
 import com.trinhhoctuan.articlecheck.services.EssayService;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequestMapping("/essays")
-@RequiredArgsConstructor
 @Slf4j
 @CrossOrigin(origins = "*")
 public class EssayController {
   private final EssayService essayService;
 
+  public EssayController(EssayService essayService) {
+    this.essayService = essayService;
+  }
+
   @PostMapping("/upload")
   public ResponseEntity<FileUploadResponse> uploadFile(
       @RequestParam("file") MultipartFile file,
-      @RequestParam("userId") Long userId,
       @RequestParam(value = "title", required = false) String title) {
 
-    log.info("Uploading file: {} for user: {}", file.getOriginalFilename(), userId);
+    log.info("Uploading file: {}", file.getOriginalFilename());
 
-    FileUploadResponse response = essayService.uploadAndProcessFile(file, userId, title);
+    FileUploadResponse response = essayService.uploadAndProcessFile(file, title);
 
     if (response.getSuccess()) {
       return ResponseEntity.ok(response);
@@ -46,11 +47,13 @@ public class EssayController {
   }
 
   @PostMapping("/{essayId}/process")
-  public ResponseEntity<EssayDto> processEssay(@PathVariable Long essayId) {
-    log.info("Processing essay: {}", essayId);
+  public ResponseEntity<EssayDto> processEssay(
+      @PathVariable Long essayId,
+      @RequestParam Long wordsId) {
+    log.info("Processing essay: {} with words: {}", essayId, wordsId);
 
     try {
-      EssayDto processedEssay = essayService.processEssay(essayId);
+      EssayDto processedEssay = essayService.processEssay(essayId, wordsId);
       return ResponseEntity.ok(processedEssay);
     } catch (Exception e) {
       log.error("Error processing essay: {}", essayId, e);
@@ -69,13 +72,13 @@ public class EssayController {
     }
   }
 
-  @GetMapping("/user/{userId}")
-  public ResponseEntity<List<EssayDto>> getUserEssays(@PathVariable Long userId) {
+  @GetMapping("/user")
+  public ResponseEntity<List<EssayDto>> getUserEssays() {
     try {
-      List<EssayDto> essays = essayService.getUserEssays(userId);
+      List<EssayDto> essays = essayService.getUserEssays();
       return ResponseEntity.ok(essays);
     } catch (Exception e) {
-      log.error("Error getting user essays: {}", userId, e);
+      log.error("Error getting user essays: {}", e.getMessage());
       return ResponseEntity.internalServerError().build();
     }
   }

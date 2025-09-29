@@ -13,16 +13,18 @@ import org.springframework.web.bind.annotation.RestController;
 import com.trinhhoctuan.articlecheck.dtos.GrammarCheckDto;
 import com.trinhhoctuan.articlecheck.services.GrammarCheckService;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequestMapping("/grammar")
-@RequiredArgsConstructor
 @Slf4j
 @CrossOrigin(origins = "*")
 public class GrammarController {
   private final GrammarCheckService grammarCheckService;
+
+  public GrammarController(GrammarCheckService grammarCheckService) {
+    this.grammarCheckService = grammarCheckService;
+  }
 
   @GetMapping("/essay/{essayId}")
   public ResponseEntity<List<GrammarCheckDto>> getGrammarChecks(@PathVariable Long essayId) {

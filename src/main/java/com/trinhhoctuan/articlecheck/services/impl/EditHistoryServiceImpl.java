@@ -14,6 +14,10 @@ import com.trinhhoctuan.articlecheck.services.EditHistoryService;
 
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Implementation of the EditHistoryService interface.
+ * Provides methods to record edits and retrieve edit history.
+ */
 @Service
 @Slf4j
 public class EditHistoryServiceImpl implements EditHistoryService {

@@ -12,16 +12,18 @@ import org.springframework.web.bind.annotation.RestController;
 import com.trinhhoctuan.articlecheck.dtos.EditHistoryDto;
 import com.trinhhoctuan.articlecheck.services.EditHistoryService;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequestMapping("/edit-history")
-@RequiredArgsConstructor
 @Slf4j
 @CrossOrigin(origins = "*")
 public class EditHistoryController {
   private final EditHistoryService editHistoryService;
+
+  public EditHistoryController(EditHistoryService editHistoryService) {
+    this.editHistoryService = editHistoryService;
+  }
 
   @GetMapping("/essay/{essayId}")
   public ResponseEntity<List<EditHistoryDto>> getEditHistory(@PathVariable Long essayId) {

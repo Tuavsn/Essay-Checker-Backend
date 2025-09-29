@@ -68,6 +68,9 @@ public class User extends BaseModel implements UserDetails {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Essay> essays;
 
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<IgnoreWords> ignoreWordss;
+
     @Column(nullable = true)
     private String locale;
 

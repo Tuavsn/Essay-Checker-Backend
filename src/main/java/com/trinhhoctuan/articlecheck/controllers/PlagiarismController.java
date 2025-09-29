@@ -13,16 +13,18 @@ import org.springframework.web.bind.annotation.RestController;
 import com.trinhhoctuan.articlecheck.dtos.PlagiarismCheckDto;
 import com.trinhhoctuan.articlecheck.services.PlagiarismCheckService;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequestMapping("/plagiarism")
-@RequiredArgsConstructor
 @Slf4j
 @CrossOrigin(origins = "*")
 public class PlagiarismController {
   private final PlagiarismCheckService plagiarismCheckService;
+
+  public PlagiarismController(PlagiarismCheckService plagiarismCheckService) {
+    this.plagiarismCheckService = plagiarismCheckService;
+  }
 
   @GetMapping("/essay/{essayId}")
   public ResponseEntity<List<PlagiarismCheckDto>> getPlagiarismChecks(@PathVariable Long essayId) {
